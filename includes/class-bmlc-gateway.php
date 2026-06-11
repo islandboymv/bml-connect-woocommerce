@@ -133,9 +133,9 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Renders the "Test BML connection" button. Only visible while Sandbox mode
-	 * is ticked (toggled live via JS). Tests the credentials currently in the
-	 * form — saving first is not required.
+	 * Renders the "Test BML connection" button. Works in both Sandbox and
+	 * Production — it tests the environment currently selected, using the
+	 * credentials currently in the form (saving first is not required).
 	 *
 	 * @param string $key
 	 * @param array  $data
@@ -150,14 +150,9 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 			<td class="forminp">
 				<button type="button" class="button" id="bmlc-test-btn"><?php esc_html_e( 'Test BML connection', 'bml-connect' ); ?></button>
 				<span id="bmlc-test-result" style="margin-left:10px;font-weight:600;"></span>
-				<p class="description"><?php esc_html_e( 'Sends a test request to BML using the credentials entered above. No payment is taken; the test transaction simply expires.', 'bml-connect' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Tests the selected environment (Sandbox or Production) using the credentials entered above. No payment is taken — the test transaction simply expires.', 'bml-connect' ); ?></p>
 				<script>
 				( function ( $ ) {
-					function toggleRow() {
-						$( '.bmlc-test-row' ).toggle( $( '#woocommerce_bml_connect_testmode' ).is( ':checked' ) );
-					}
-					$( document ).on( 'change', '#woocommerce_bml_connect_testmode', toggleRow );
-					$( toggleRow );
 					$( document ).on( 'click', '#bmlc-test-btn', function ( e ) {
 						e.preventDefault();
 						var $r = $( '#bmlc-test-result' ).css( 'color', '#646970' ).text( '<?php echo esc_js( __( 'Testing…', 'bml-connect' ) ); ?>' );

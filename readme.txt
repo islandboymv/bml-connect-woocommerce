@@ -45,6 +45,10 @@ Webhook URL format:
 
 == Changelog ==
 
+= 1.2.0 =
+* The "Test BML connection" button now works in Production mode too (previously
+  shown only in Sandbox). It tests whichever environment is currently selected.
+
 = 1.1.0 =
 * Add a "Test BML connection" button on the settings screen (shown while Sandbox
   mode is on). Validates connectivity and credentials with a throwaway test
