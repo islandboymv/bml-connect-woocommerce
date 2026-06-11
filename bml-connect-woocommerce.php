@@ -4,7 +4,7 @@
  * Plugin URI:  https://github.com/islandboy/bml-connect-woocommerce
  * Description: First-party WooCommerce payment gateway for Bank of Maldives (BML) Connect. Redirect-based card / MobilePay payments with signature-verified webhooks. HPOS + Blocks checkout ready. Reusable across projects.
  * Author:      Islandboy
- * Version:     1.0.0
+ * Version:     1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * WC requires at least: 7.0
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BMLC_VERSION', '1.0.0' );
+define( 'BMLC_VERSION', '1.1.0' );
 define( 'BMLC_FILE', __FILE__ );
 define( 'BMLC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BMLC_URL', plugin_dir_url( __FILE__ ) );
@@ -52,6 +52,9 @@ add_action( 'plugins_loaded', function () {
 		$methods[] = 'BMLC_Gateway';
 		return $methods;
 	} );
+
+	// Admin AJAX: "Test BML connection" button on the settings screen.
+	add_action( 'wp_ajax_bmlc_test_connection', array( 'BMLC_Gateway', 'ajax_test_connection' ) );
 }, 11 );
 
 /**

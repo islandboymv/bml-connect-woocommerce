@@ -45,5 +45,10 @@ Webhook URL format:
 
 == Changelog ==
 
+= 1.1.0 =
+* Add a "Test BML connection" button on the settings screen (shown while Sandbox
+  mode is on). Validates connectivity and credentials with a throwaway test
+  transaction and shows a clear success or error message.
+
 = 1.0.0 =
 * Initial release.

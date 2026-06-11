@@ -125,7 +125,115 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 					esc_url( $webhook_url )
 				),
 			),
+			'test_connection' => array(
+				'title' => __( 'Test connection', 'bml-connect' ),
+				'type'  => 'bmlc_test',
+			),
 		);
+	}
+
+	/**
+	 * Renders the "Test BML connection" button. Only visible while Sandbox mode
+	 * is ticked (toggled live via JS). Tests the credentials currently in the
+	 * form — saving first is not required.
+	 *
+	 * @param string $key
+	 * @param array  $data
+	 * @return string
+	 */
+	public function generate_bmlc_test_html( $key, $data ) {
+		$nonce = wp_create_nonce( 'bmlc_test_connection' );
+		ob_start();
+		?>
+		<tr valign="top" class="bmlc-test-row">
+			<th scope="row" class="titledesc"><?php esc_html_e( 'Test connection', 'bml-connect' ); ?></th>
+			<td class="forminp">
+				<button type="button" class="button" id="bmlc-test-btn"><?php esc_html_e( 'Test BML connection', 'bml-connect' ); ?></button>
+				<span id="bmlc-test-result" style="margin-left:10px;font-weight:600;"></span>
+				<p class="description"><?php esc_html_e( 'Sends a test request to BML using the credentials entered above. No payment is taken; the test transaction simply expires.', 'bml-connect' ); ?></p>
+				<script>
+				( function ( $ ) {
+					function toggleRow() {
+						$( '.bmlc-test-row' ).toggle( $( '#woocommerce_bml_connect_testmode' ).is( ':checked' ) );
+					}
+					$( document ).on( 'change', '#woocommerce_bml_connect_testmode', toggleRow );
+					$( toggleRow );
+					$( document ).on( 'click', '#bmlc-test-btn', function ( e ) {
+						e.preventDefault();
+						var $r = $( '#bmlc-test-result' ).css( 'color', '#646970' ).text( '<?php echo esc_js( __( 'Testing…', 'bml-connect' ) ); ?>' );
+						$.post( ajaxurl, {
+							action: 'bmlc_test_connection',
+							nonce: '<?php echo esc_js( $nonce ); ?>',
+							api_key: $( '#woocommerce_bml_connect_api_key' ).val(),
+							app_id: $( '#woocommerce_bml_connect_app_id' ).val(),
+							testmode: $( '#woocommerce_bml_connect_testmode' ).is( ':checked' ) ? 'yes' : 'no'
+						} ).done( function ( res ) {
+							if ( res && res.success ) {
+								$r.css( 'color', '#46b450' ).text( '✓ ' + res.data.message );
+							} else {
+								$r.css( 'color', '#dc3232' ).text( '✗ ' + ( res && res.data ? res.data.message : 'Unknown error' ) );
+							}
+						} ).fail( function ( xhr ) {
+							$r.css( 'color', '#dc3232' ).text( '✗ Request failed (HTTP ' + xhr.status + ')' );
+						} );
+					} );
+				} )( jQuery );
+				</script>
+			</td>
+		</tr>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * AJAX: validate connectivity + credentials by creating a throwaway BML
+	 * transaction (MVR 1.00, never paid). Returns a clear success or error.
+	 */
+	public static function ajax_test_connection() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bml-connect' ) ), 403 );
+		}
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'bmlc_test_connection' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed. Reload the page and try again.', 'bml-connect' ) ), 400 );
+		}
+
+		$api_key = isset( $_POST['api_key'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) ) : '';
+		$app_id  = isset( $_POST['app_id'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) ) : '';
+		$sandbox = isset( $_POST['testmode'] ) && 'yes' === $_POST['testmode'];
+		$env     = $sandbox ? __( 'Sandbox', 'bml-connect' ) : __( 'Production', 'bml-connect' );
+
+		if ( empty( $api_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Enter your API key first.', 'bml-connect' ) ) );
+		}
+
+		$client = new BMLC_Client( $api_key, $app_id, $sandbox, false );
+		$res    = $client->create_transaction( array(
+			'amount'            => 100,
+			'currency'          => 'MVR',
+			'localId'           => 'bmlc-connection-test-' . time(),
+			'customerReference' => 'BML Connect connection test',
+		) );
+
+		if ( is_wp_error( $res ) ) {
+			$data   = $res->get_error_data();
+			$status = ( is_array( $data ) && isset( $data['status'] ) ) ? (int) $data['status'] : 0;
+			$hint   = in_array( $status, array( 401, 403 ), true )
+				? ' ' . __( 'Check your API key matches the selected environment.', 'bml-connect' )
+				: '';
+			wp_send_json_error( array(
+				/* translators: 1: environment, 2: error message */
+				'message' => sprintf( __( '%1$s connection failed: %2$s', 'bml-connect' ), $env, $res->get_error_message() ) . $hint,
+			) );
+		}
+
+		if ( empty( $res->id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unexpected response from BML (no transaction id returned).', 'bml-connect' ) ) );
+		}
+
+		wp_send_json_success( array(
+			/* translators: 1: environment, 2: transaction id */
+			'message' => sprintf( __( '%1$s connection OK — BML accepted a test transaction (%2$s).', 'bml-connect' ), $env, $res->id ),
+		) );
 	}
 
 	/**
