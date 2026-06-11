@@ -1,5 +1,8 @@
 # BML Connect for WooCommerce
 
+[![Active installs](https://img.shields.io/endpoint?url=https%3A%2F%2Fmgga-shop.islandboy.xyz%2Fwp-json%2Ftelemetry%2Fv1%2Fbadge%2Fbml-connect-woocommerce)](https://github.com/islandboymv/bml-connect-woocommerce)
+[![Latest release](https://img.shields.io/github/v/release/islandboymv/bml-connect-woocommerce)](https://github.com/islandboymv/bml-connect-woocommerce/releases)
+
 A clean, dependency-free WooCommerce payment gateway for **Bank of Maldives (BML) Connect**. Brand-neutral and reusable — drop it into any WooCommerce project and configure per-merchant in the settings.
 
 > ⚠️ This is an independent, third-party plugin. It is not affiliated with or endorsed by Bank of Maldives.
