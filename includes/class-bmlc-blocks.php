@@ -42,7 +42,7 @@ final class BMLC_Blocks_Support extends AbstractPaymentMethodType {
 		return array(
 			'title'       => $this->gateway ? $this->gateway->title : ( $this->settings['title'] ?? 'BML Connect' ),
 			'description' => $this->gateway ? $this->gateway->description : ( $this->settings['description'] ?? '' ),
-			'icon'        => ( $this->gateway && $this->gateway->icon ) ? $this->gateway->icon : '',
+			'icon'        => ( $this->gateway && $this->gateway->merchants_image ) ? $this->gateway->merchants_image : '',
 			'supports'    => $this->gateway
 				? array_filter( $this->gateway->supports, array( $this->gateway, 'supports' ) )
 				: array( 'products' ),

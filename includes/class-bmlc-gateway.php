@@ -27,6 +27,8 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 	public $app_id;
 	/** @var bool */
 	public $debug;
+	/** @var string URL of the supported-merchants image, or '' when disabled. */
+	public $merchants_image;
 
 	public function __construct() {
 		$this->id                 = 'bml_connect';
@@ -46,9 +48,9 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 		$this->app_id      = $this->get_option( 'app_id' );
 		$this->debug       = 'yes' === $this->get_option( 'debug' );
 
-		if ( 'yes' === $this->get_option( 'show_icon' ) && file_exists( BMLC_PATH . 'assets/img/bml.png' ) ) {
-			$this->icon = apply_filters( 'bmlc_icon', BMLC_URL . 'assets/img/bml.png' );
-		}
+		$this->merchants_image = ( 'yes' === $this->get_option( 'show_icon' ) && file_exists( BMLC_PATH . 'assets/img/card-schemes.png' ) )
+			? apply_filters( 'bmlc_supported_merchants_image', BMLC_URL . 'assets/img/card-schemes.png' )
+			: '';
 
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 
@@ -59,6 +61,23 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 
 	private function client() {
 		return new BMLC_Client( $this->api_key, $this->app_id, $this->testmode, $this->debug );
+	}
+
+	/**
+	 * Classic checkout: rendered in the area revealed when this method is selected.
+	 * Shows the description and (optionally) the supported-merchants image.
+	 */
+	public function payment_fields() {
+		if ( $this->description ) {
+			echo wpautop( wptexturize( $this->description ) );
+		}
+		if ( $this->merchants_image ) {
+			printf(
+				'<img src="%s" alt="%s" class="bmlc-supported-merchants" style="max-width:100%%;height:auto;margin-top:8px;" />',
+				esc_url( $this->merchants_image ),
+				esc_attr__( 'Supported merchants', 'bml-connect' )
+			);
+		}
 	}
 
 	public function init_form_fields() {
@@ -104,8 +123,8 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 				'desc_tip'    => true,
 			),
 			'show_icon'    => array(
-				'title'   => __( 'Show BML icon', 'bml-connect' ),
-				'label'   => __( 'Display the BML logo at checkout', 'bml-connect' ),
+				'title'   => __( 'Supported merchants', 'bml-connect' ),
+				'label'   => __( 'Display Supported Merchants', 'bml-connect' ),
 				'type'    => 'checkbox',
 				'default' => 'yes',
 			),

@@ -5,7 +5,7 @@ Tested up to: 7.0
 Requires PHP: 7.4
 WC requires at least: 7.0
 WC tested up to: 10.7
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 License: GPLv2 or later
 
 First-party WooCommerce payment gateway for Bank of Maldives (BML) Connect.
@@ -44,6 +44,11 @@ Webhook URL format:
   Tunnel / ngrok) or test confirmations via the BML sandbox.
 
 == Changelog ==
+
+= 1.3.4 =
+* Rename the "Display the BML logo at checkout" setting to "Display Supported
+  Merchants" and show a card-schemes image in the checkout area when the gateway
+  is selected.
 
 = 1.3.3 =
 * Move telemetry collector to a dedicated Cloudflare Worker (off the WP site).

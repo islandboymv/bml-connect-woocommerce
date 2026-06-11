@@ -7,24 +7,22 @@
 	var label    = window.wp.htmlEntities.decodeEntities( settings.title ) || 'BML Connect';
 	var el       = window.wp.element.createElement;
 
+	// Shown in the area revealed when this method is selected: description + supported-merchants image.
 	var Content = function () {
-		return window.wp.htmlEntities.decodeEntities( settings.description || '' );
+		var children = [ window.wp.htmlEntities.decodeEntities( settings.description || '' ) ];
+		if ( settings.icon ) {
+			children.push( el( 'img', {
+				key: 'bmlc-merchants',
+				src: settings.icon,
+				alt: 'Supported merchants',
+				style: { display: 'block', maxWidth: '100%', height: 'auto', marginTop: '8px' },
+			} ) );
+		}
+		return el( 'div', null, children );
 	};
 
 	var Label = function () {
-		var icon = settings.icon
-			? el( 'img', {
-				src: settings.icon,
-				alt: label,
-				style: { marginLeft: '8px', maxHeight: '24px' },
-			} )
-			: null;
-		return el(
-			'span',
-			{ style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' } },
-			label,
-			icon
-		);
+		return el( 'span', { style: { width: '100%' } }, label );
 	};
 
 	window.wc.wcBlocksRegistry.registerPaymentMethod( {
