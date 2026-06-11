@@ -6,8 +6,10 @@ Thumbs.db
 .vscode/
 
 # Dependencies / build (none currently, but reserved)
+# NOTE: only the project root vendor/ is ignored — the bundled
+# lib/plugin-update-checker/vendor/ MUST be committed so updates work.
 node_modules/
-vendor/
+/vendor/
 
 # Local env
 *.log

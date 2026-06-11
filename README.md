@@ -15,6 +15,7 @@ A clean, dependency-free WooCommerce payment gateway for **Bank of Maldives (BML
 - **Blocks compatible** — works with the WooCommerce Checkout block and classic shortcode checkout
 - **No external dependencies** — built on the WordPress HTTP API (no Guzzle/Composer)
 - **Built-in connection test** — a "Test BML connection" button in settings validates your credentials before going live
+- **Self-updating** — installs updates straight from GitHub Releases via the WordPress Plugins screen
 
 ## Requirements
 

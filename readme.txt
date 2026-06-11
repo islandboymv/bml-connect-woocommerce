@@ -45,6 +45,11 @@ Webhook URL format:
 
 == Changelog ==
 
+= 1.3.0 =
+* Plugin now self-updates from GitHub Releases. The WordPress Plugins screen
+  shows available updates and installs them with one click (via the bundled
+  Plugin Update Checker library).
+
 = 1.2.0 =
 * The "Test BML connection" button now works in Production mode too (previously
   shown only in Sandbox). It tests whichever environment is currently selected.

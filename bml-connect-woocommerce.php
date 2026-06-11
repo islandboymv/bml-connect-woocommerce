@@ -1,10 +1,10 @@
 <?php
 /**
  * Plugin Name: BML Connect for WooCommerce
- * Plugin URI:  https://github.com/islandboy/bml-connect-woocommerce
+ * Plugin URI:  https://github.com/islandboymv/bml-connect-woocommerce
  * Description: First-party WooCommerce payment gateway for Bank of Maldives (BML) Connect. Redirect-based card / MobilePay payments with signature-verified webhooks. HPOS + Blocks checkout ready. Reusable across projects.
  * Author:      Islandboy
- * Version:     1.2.0
+ * Version:     1.3.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * WC requires at least: 7.0
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BMLC_VERSION', '1.2.0' );
+define( 'BMLC_VERSION', '1.3.0' );
 define( 'BMLC_FILE', __FILE__ );
 define( 'BMLC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BMLC_URL', plugin_dir_url( __FILE__ ) );
@@ -30,6 +30,24 @@ add_action( 'before_woocommerce_init', function () {
 		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', BMLC_FILE, true );
 		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', BMLC_FILE, true );
 	}
+} );
+
+/**
+ * GitHub-powered automatic updates.
+ *
+ * Once installed, the plugin checks this repository's GitHub Releases and offers
+ * one-click updates from the WordPress Plugins screen — just like a wp.org plugin.
+ * To ship an update: bump the Version header, commit, and publish a GitHub Release
+ * (e.g. tag v1.3.0). PUC ignores releases marked "pre-release".
+ */
+add_action( 'plugins_loaded', function () {
+	require_once BMLC_PATH . 'lib/plugin-update-checker/plugin-update-checker.php';
+
+	\YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+		'https://github.com/islandboymv/bml-connect-woocommerce/',
+		BMLC_FILE,
+		'bml-connect-woocommerce'
+	);
 } );
 
 /**
