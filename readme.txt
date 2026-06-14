@@ -5,7 +5,7 @@ Tested up to: 7.0
 Requires PHP: 7.4
 WC requires at least: 7.0
 WC tested up to: 10.7
-Stable tag: 1.3.4
+Stable tag: 1.3.5
 License: GPLv2 or later
 
 First-party WooCommerce payment gateway for Bank of Maldives (BML) Connect.
@@ -44,6 +44,11 @@ Webhook URL format:
   Tunnel / ngrok) or test confirmations via the BML sandbox.
 
 == Changelog ==
+
+= 1.3.5 =
+* Add an "Order status after payment" setting — choose which status an order moves
+  to once BML confirms payment (Default, On hold, Processing, Completed, or any
+  custom status). "Default" keeps WooCommerce's existing behaviour.
 
 = 1.3.4 =
 * Rename the "Display the BML logo at checkout" setting to "Display Supported

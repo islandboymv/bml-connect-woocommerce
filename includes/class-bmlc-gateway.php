@@ -27,6 +27,8 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 	public $app_id;
 	/** @var bool */
 	public $debug;
+	/** @var string Order status to apply after a confirmed payment, or 'default'. */
+	public $order_status;
 	/** @var string URL of the supported-merchants image, or '' when disabled. */
 	public $merchants_image;
 
@@ -47,6 +49,7 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 		$this->api_key     = $this->get_option( 'api_key' );
 		$this->app_id      = $this->get_option( 'app_id' );
 		$this->debug       = 'yes' === $this->get_option( 'debug' );
+		$this->order_status = $this->get_option( 'order_status', 'default' );
 
 		$this->merchants_image = ( 'yes' === $this->get_option( 'show_icon' ) && file_exists( BMLC_PATH . 'assets/img/card-schemes.png' ) )
 			? apply_filters( 'bmlc_supported_merchants_image', BMLC_URL . 'assets/img/card-schemes.png' )
@@ -103,6 +106,15 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 				'default' => __( 'Pay securely via Bank of Maldives. You will be redirected to BML to complete your payment.', 'bml-connect' ),
 				'css'     => 'max-width:450px;',
 			),
+			'order_status' => array(
+				'title'       => __( 'Order status after payment', 'bml-connect' ),
+				'type'        => 'select',
+				'class'       => 'wc-enhanced-select',
+				'default'     => 'default',
+				'options'     => $this->order_status_options(),
+				'description' => __( 'Status to set once BML confirms payment. "Default" lets WooCommerce decide (Processing, or Completed for downloadable/virtual orders).', 'bml-connect' ),
+				'desc_tip'    => true,
+			),
 			'testmode'     => array(
 				'title'       => __( 'Sandbox (test) mode', 'bml-connect' ),
 				'label'       => __( 'Use the BML UAT/sandbox environment', 'bml-connect' ),
@@ -149,6 +161,29 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 				'type'  => 'bmlc_test',
 			),
 		);
+	}
+
+	/**
+	 * Statuses offered for "Order status after payment". Built from WooCommerce's
+	 * registered statuses (so custom statuses appear too), minus the ones that make
+	 * no sense for a successful payment. Keys are unprefixed (e.g. 'processing').
+	 *
+	 * @return array
+	 */
+	private function order_status_options() {
+		$options = array( 'default' => __( 'Default (let WooCommerce decide)', 'bml-connect' ) );
+
+		if ( function_exists( 'wc_get_order_statuses' ) ) {
+			$exclude = array( 'wc-pending', 'wc-cancelled', 'wc-refunded', 'wc-failed', 'wc-checkout-draft' );
+			foreach ( wc_get_order_statuses() as $key => $label ) {
+				if ( in_array( $key, $exclude, true ) ) {
+					continue;
+				}
+				$options[ substr( $key, 3 ) ] = $label; // Strip the 'wc-' prefix.
+			}
+		}
+
+		return $options;
 	}
 
 	/**
@@ -394,12 +429,23 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 	 * Mark an order paid. Idempotent — safe to call from both webhook and return.
 	 */
 	private function complete_order( WC_Order $order, $transaction_id ) {
-		if ( $order->is_paid() || in_array( $order->get_status(), array( 'processing', 'completed' ), true ) ) {
+		// Idempotency: skip if we've already recorded this payment. Checking the paid
+		// date (set by payment_complete) covers admin-chosen statuses that WooCommerce
+		// doesn't treat as "paid" — e.g. On hold — which is_paid() would miss.
+		if ( $order->is_paid() || $order->get_date_paid() || in_array( $order->get_status(), array( 'processing', 'completed' ), true ) ) {
 			$this->log( 'order ' . $order->get_id() . ' already paid; skipping' );
 			return;
 		}
 		$order->payment_complete( $transaction_id );
 		$order->add_order_note( sprintf( /* translators: %s: BML transaction id */ __( 'BML payment confirmed (transaction %s).', 'bml-connect' ), $transaction_id ) );
+
+		// payment_complete() records the payment and applies WooCommerce's default
+		// status (processing, or completed for virtual/downloadable orders). If the
+		// admin chose a specific post-payment status, apply it now.
+		if ( $this->order_status && 'default' !== $this->order_status && ! $order->has_status( $this->order_status ) ) {
+			$order->update_status( $this->order_status, __( 'Status set by BML Connect after successful payment.', 'bml-connect' ) );
+		}
+
 		$this->log( 'order ' . $order->get_id() . ' marked paid via txn ' . $transaction_id );
 	}
 
