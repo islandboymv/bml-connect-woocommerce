@@ -18,6 +18,16 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 
 	const TXN_META     = '_bmlc_transaction_id';
 	const HISTORY_META = '_bmlc_all_transaction_ids';
+	const CREATED_META = '_bmlc_transaction_created';
+
+	/**
+	 * How long (seconds) a created BML link may be reused. Long enough to absorb
+	 * an accidental double-submit, short enough that a deliberate retry always
+	 * gets a brand-new link — BML card-locks a link after repeated failed
+	 * attempts but leaves the transaction in QR_CODE_GENERATED, so we must never
+	 * keep sending a buyer back to a link they've already been trying on.
+	 */
+	const REUSE_WINDOW = 90;
 
 	/** @var bool */
 	public $testmode;
@@ -307,9 +317,14 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 
 		$amount = $this->to_laari( $order->get_total() );
 
-		// Reuse an existing, still-payable transaction instead of creating a duplicate.
+		// Reuse a *freshly-created* link to absorb an accidental double-submit, but
+		// only within REUSE_WINDOW. A deliberate retry past that window — or after a
+		// failed return, which clears the pointer below — always mints a new link.
+		// State alone is not enough: a card-locked link stays QR_CODE_GENERATED, so
+		// reusing on state would trap the buyer on the dead link forever.
 		$existing = $order->get_meta( self::TXN_META );
-		if ( ! empty( $existing ) ) {
+		$created  = (int) $order->get_meta( self::CREATED_META );
+		if ( ! empty( $existing ) && $created && ( time() - $created ) < self::REUSE_WINDOW ) {
 			$txn = $this->client()->get_transaction( $existing );
 			if ( ! is_wp_error( $txn )
 				&& isset( $txn->amount, $txn->state, $txn->url )
@@ -338,6 +353,7 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 		}
 
 		$order->update_meta_data( self::TXN_META, $txn->id );
+		$order->update_meta_data( self::CREATED_META, time() );
 		$order->set_transaction_id( $txn->id );
 		$history = $order->get_meta( self::HISTORY_META );
 		$order->update_meta_data( self::HISTORY_META, $history ? $history . ', ' . $txn->id : $txn->id );
@@ -380,6 +396,13 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 			wp_safe_redirect( $this->get_return_url( $order ) );
 			exit;
 		}
+
+		// The buyer came back without paying — treat this link as spent. Dropping the
+		// pointer guarantees the next attempt mints a fresh link rather than redirecting
+		// back to a link BML may have card-locked. The full history stays in HISTORY_META.
+		$order->delete_meta_data( self::TXN_META );
+		$order->delete_meta_data( self::CREATED_META );
+		$order->save();
 
 		wc_add_notice( __( 'Your BML payment was not completed. You can try again below.', 'bml-connect' ), 'error' );
 		wp_safe_redirect( $order->get_checkout_payment_url() );

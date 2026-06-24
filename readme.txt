@@ -5,7 +5,7 @@ Tested up to: 7.0
 Requires PHP: 7.4
 WC requires at least: 7.0
 WC tested up to: 10.7
-Stable tag: 1.3.5
+Stable tag: 1.3.6
 License: GPLv2 or later
 
 First-party WooCommerce payment gateway for Bank of Maldives (BML) Connect.
@@ -44,6 +44,14 @@ Webhook URL format:
   Tunnel / ngrok) or test confirmations via the BML sandbox.
 
 == Changelog ==
+
+= 1.3.6 =
+* Fix: a buyer could get stuck on a dead payment link. After repeated failed card
+  attempts BML card-locks a link but leaves the transaction in QR_CODE_GENERATED,
+  so the gateway kept redirecting retries back to the locked link instead of
+  generating a new one. The gateway now reuses a link only briefly (to absorb an
+  accidental double-submit) and mints a fresh link on a deliberate retry or after
+  the buyer returns without paying.
 
 = 1.3.5 =
 * Add an "Order status after payment" setting — choose which status an order moves
