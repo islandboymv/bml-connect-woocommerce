@@ -5,7 +5,7 @@ Tested up to: 7.0
 Requires PHP: 7.4
 WC requires at least: 7.0
 WC tested up to: 10.7
-Stable tag: 1.3.6
+Stable tag: 1.3.7
 License: GPLv2 or later
 
 First-party WooCommerce payment gateway for Bank of Maldives (BML) Connect.
@@ -44,6 +44,11 @@ Webhook URL format:
   Tunnel / ngrok) or test confirmations via the BML sandbox.
 
 == Changelog ==
+
+= 1.3.7 =
+* Fix: webhooks sent in BML's event envelope ({eventId, eventType, data: {...}})
+  were acknowledged but never completed the order, because state and transactionId
+  were read from the top level. Both the enveloped and the flat shape are now accepted.
 
 = 1.3.6 =
 * Fix: a buyer could get stuck on a dead payment link. After repeated failed card

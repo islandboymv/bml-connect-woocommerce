@@ -427,11 +427,15 @@ class BMLC_Gateway extends WC_Payment_Gateway {
 			exit;
 		}
 
-		$data   = json_decode( $raw );
+		$payload = json_decode( $raw );
+		$event   = isset( $payload->eventType ) ? $payload->eventType : '';
+		// BML wraps the transaction in an event envelope ({eventId, eventType, data: {...}});
+		// older deliveries were flat. Accept both.
+		$data   = ( isset( $payload->data ) && is_object( $payload->data ) ) ? $payload->data : $payload;
 		$state  = isset( $data->state ) ? $data->state : '';
 		$txn_id = isset( $data->transactionId ) ? $data->transactionId : ( isset( $data->id ) ? $data->id : '' );
 
-		$this->log( 'webhook received: state=' . $state . ' txn=' . $txn_id );
+		$this->log( 'webhook received: event=' . $event . ' state=' . $state . ' txn=' . $txn_id );
 
 		if ( 'CONFIRMED' === $state && $txn_id ) {
 			$order = $this->find_order_by_transaction( $txn_id );
