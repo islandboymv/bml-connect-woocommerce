@@ -1,0 +1,31 @@
+name: Release
+
+# Pushing to main with a new "Version:" in the plugin header publishes a
+# GitHub Release for it. Sites running Plugin Update Checker pick releases up
+# (GitHub Push Updates installs them within a minute via webhook).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish a release when the plugin version changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          file="${GITHUB_REPOSITORY#*/}.php"
+          version=$(grep -m1 -E '^[[:space:]]*\*?[[:space:]]*Version:' "$file" | awk '{print $NF}')
+          if [ -z "$version" ]; then echo "No Version header in $file"; exit 1; fi
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo "v$version is already released; nothing to do."
+            exit 0
+          fi
+          gh release create "v$version" --target "$GITHUB_SHA" --title "v$version" --generate-notes
